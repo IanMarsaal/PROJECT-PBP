@@ -15,8 +15,6 @@ class Destinasi extends Migration
             'name'          => ['type' => 'VARCHAR', 'constraint' => 255],
             'description'   => ['type' => 'TEXT'],
             'address'       => ['type' => 'TEXT'],
-            'ticket_price'  => ['type' => 'DECIMAL', 'constraint' => '10,2', 'default' => '0.00'],
-            'opening_hours' => ['type' => 'VARCHAR', 'constraint' => 100, 'null' => true],
             'latitude'      => ['type' => 'DECIMAL', 'constraint' => '10,8', 'null' => true],
             'longitude'     => ['type' => 'DECIMAL', 'constraint' => '11,8', 'null' => true],
             'created_at'    => ['type' => 'DATETIME', 'null' => true],

@@ -15,6 +15,9 @@ class Review extends Migration
             'rating'         => ['type' => 'INT', 'constraint' => 1],
             'comment'        => ['type' => 'TEXT', 'null' => true],
             'created_at'     => ['type' => 'DATETIME', 'null' => true],
+            'updated_at'     => ['type' => 'DATETIME', 'null' => true],
+
+               
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('destination_review_id', 'destinasi', 'id', 'CASCADE', 'CASCADE');

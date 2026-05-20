@@ -43,6 +43,7 @@ class AuthController extends BaseController
 
     public function login()
     {
+
         return view('Auth/login');
     }
 
@@ -60,12 +61,18 @@ class AuthController extends BaseController
                 $session->set([
                     'id'       => $user['id'],
                     'username' => $user['username'],
+                    'email'      => $user['email'],
                     'role'     => $user['role'],
                     'isLoggedIn' => true,
                 ]);
 
                 // Redirect berdasarkan role
-                return ($user['role'] == 'admin') ? redirect()->to('/admin/dashboard') : redirect()->to('/');
+               // PENGARAHAN BERDASARKAN ROLE (JABATAN)
+                if ($user['role'] === 'admin') {
+                    return redirect()->to('/admin/dashboard');
+                } else {
+                    return redirect()->to('/beranda');
+                }
             }
         }
 
@@ -78,3 +85,5 @@ class AuthController extends BaseController
         return redirect()->to('/login');
     }
 }
+
+    

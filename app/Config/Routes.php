@@ -6,42 +6,63 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// 1. JALUR WEB (Halaman Pengunjung & Admin dengan Bootstrap 5)
-$routes->get('/', 'Home::index'); 
-$routes->get('/register', 'AuthController::register');
-$routes->post('/register/process', 'AuthController::attemptRegister');
-$routes->get('/login', 'AuthController::login');
-$routes->post('/login/process', 'AuthController::attemptLogin');
-$routes->get('/logout', 'AuthController::logout');
+// ==========================================================
+// ZONA 1: PUBLIK 
+// ==========================================================
+    $routes->get('/', 'AuthController::login');
+    $routes->get('/login', 'AuthController::login');
+    $routes->post('/login', 'AuthController::attemptLogin');
+    $routes->get('/register', 'AuthController::register');
+    $routes->post('register', 'AuthController::attemptRegister');
+    $routes->get('/logout', 'AuthController::logout');
 
 
-// Group khusus Admin 
-$routes->group('admin', ['filter' => 'auth'], function($routes) {
+// ==========================================================
+// ZONA 2: PENGUNJUNG BIASA 
+// ==========================================================;
+$routes->group('', ['filter' => 'auth'], function($routes) {
+    $routes->get('/', 'Home::index');
+    $routes->get('beranda', 'Home::index');
+    $routes->get('destinasi', 'Home::destinasi');
+    $routes->get('destinasi/detail/(:num)', 'Home::detailDestinasi/$1');
+    $routes->post('destinasi/review/store', 'Home::simpanReview');
+    $routes->get('tentang', 'Home::tentang');
+    $routes->get('kontak', 'Home::kontak');
+    $routes->get('profil', 'Home::profil');
+    $routes->post('kontak/kirim', 'Home::kirimPesan');
+});
+
+
+// ==========================================================
+// ZONA 3: KHUSUS ADMIN 
+// ==========================================================
+    $routes->group('admin', ['filter' => 'admin'], function($routes) {
     
-    // Dashboard Admin
-    $routes->get('dashboard', 'AdminController::index');
+    // Rute Dashboard Admin
+    $routes->get('dashboard', 'AdminController::dashboard');
 
-    // CRUD KATEGORI
-    $routes->get('kategori', 'KategoriController::index');
-    $routes->get('kategori/create', 'KategoriController::create');
-    $routes->post('kategori/store', 'KategoriController::store');
-    $routes->get('kategori/edit/(:num)', 'KategoriController::edit/$1');
-    $routes->post('kategori/update/(:num)', 'KategoriController::update/$1');
-    $routes->get('kategori/delete/(:num)', 'KategoriController::delete/$1');
+    // CRUD KATEGORI 
+    $routes->get('kategori', 'AdminController::index');
+    $routes->post('kategori/store', 'AdminController::store');
+    $routes->get('kategori/edit/(:num)', 'AdminController::edit/$1');
+    $routes->post('kategori/update/(:num)', 'AdminController::update/$1');
+    $routes->get('kategori/delete/(:num)', 'AdminController::delete/$1');
 
-    // CRUD Destinasi (Termasuk Upload Gambar & Peta)
-    $routes->get('destinasi', 'DestinasiController::index');
-    $routes->get('destinasi/create', 'DestinasiController::create');
-    $routes->post('destinasi/store', 'DestinasiController::store');
-    $routes->get('destinasi/edit/(:num)', 'DestinasiController::edit/$1');
-    $routes->post('destinasi/update/(:num)', 'DestinasiController::update/$1');
-    $routes->get('destinasi/delete/(:num)', 'DestinasiController::delete/$1');
+    // CRUD DESTINASI
+    $routes->get('destinasi', 'AdminController::destinasiIndex');
+    $routes->post('destinasi/store', 'AdminController::destinasiStore');
+    $routes->get('destinasi/edit/(:num)', 'AdminController::destinasiEdit/$1');
+    $routes->post('destinasi/update/(:num)', 'AdminController::destinasiUpdate/$1');
+    $routes->get('destinasi/delete/(:num)', 'AdminController::destinasiDelete/$1');
+    $routes->get('review', 'AdminController::reviewIndex');
+    $routes->get('review/delete/(:num)', 'AdminController::reviewDelete/$1');
+});
 
-}); // <--- INI YANG HILANG (Penutup Grup Admin)
-
-
-// 2. JALUR REST API (Untuk tugas web service / mobile apps)
-$routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) {
+// ==========================================================
+// ZONA 4: REST API 
+// ==========================================================;
+    
+    $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) {
     $routes->post('login', 'AuthApi::login');
     $routes->get('destinasi', 'DestinasiApi::index'); 
 });

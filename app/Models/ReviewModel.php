@@ -6,10 +6,20 @@ use CodeIgniter\Model;
 
 class ReviewModel extends Model
 {
-    protected $table            = 'review';
-    protected $primaryKey       = 'id';
-    protected $allowedFields    = ['destination_review_id', 'user_id', 'rating', 'comment', 'created_at'];
-    protected $useTimestamps    = false;
-  
- 
+    // Nama tabel di database Anda (Pastikan benar!)
+    protected $table      = 'review'; 
+    
+    // Primary key di tabel review
+    protected $primaryKey = 'id';
+
+    // SATPAM: Daftar kolom yang diizinkan untuk diisi data
+    protected $allowedFields = [
+        'destination_review_id', 
+        'user_id', 
+        'rating', 
+        'comment'
+    ];
+
+    // Aktifkan ini jika tabel Anda punya kolom created_at dan updated_at
+    protected $useTimestamps = true; 
 }
