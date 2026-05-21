@@ -2,6 +2,7 @@
 
 <?= $this->section('styles') ?>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
     /* --- GALERI INTERAKTIF --- */
@@ -32,11 +33,10 @@
     .star-rating-ui label {
         cursor: pointer; font-size: 2.2rem; color: #e5e7eb; transition: color 0.2s ease;
     }
-    /* Warna saat di-hover atau dipilih */
     .star-rating-ui input:checked ~ label,
     .star-rating-ui label:hover,
     .star-rating-ui label:hover ~ label {
-        color: #ffc107; /* Kuning Emas */
+        color: #ffc107;
     }
 
     /* --- KOTAK ULASAN & MAPS --- */
@@ -45,7 +45,6 @@
         border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.03);
     }
     
-    /* Scrollbar Kustom untuk Daftar Ulasan */
     .review-list-container {
         max-height: 400px; overflow-y: auto; padding-right: 10px;
     }
@@ -54,10 +53,15 @@
     .review-list-container::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
     .review-list-container::-webkit-scrollbar-thumb:hover { background: #f26e22; }
 
-    /* Frame Peta */
-    .map-frame {
-        width: 100%; height: 250px; border: none; border-radius: 16px;
-        background-color: #f8f9fa; margin-bottom: 15px;
+    /* PENYESUAIAN CONTAINER PETA LEAFLET */
+    #mapUser {
+        width: 100%; 
+        height: 320px; 
+        border-radius: 16px;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        border: 1px solid #dee2e6;
+        margin-bottom: 15px;
+        z-index: 1;
     }
 </style>
 <?= $this->endSection() ?>
@@ -67,7 +71,7 @@
 <div class="container my-5 pt-3">
     
     <a href="<?= base_url('destinasi') ?>" class="btn btn-white border shadow-sm rounded-pill px-4 mb-4 fw-semibold hover-orange" data-aos="fade-right">
-        <i class="fa-solid fa-arrow-left me-2"></i> Kembali ke Katalog
+        <i class="fa-solid fa-arrow-left me-2"></i> Kembali ke Destinasi
     </a>
 
     <div class="row g-5">
@@ -77,6 +81,15 @@
             <div data-aos="fade-up">
                 <span class="badge bg-orange text-white px-3 py-2 rounded-pill mb-2 shadow-sm">Detail Destinasi</span>
                 <h1 class="fw-bold mb-2 display-6 text-dark"><?= esc($destinasi['name']) ?></h1>
+                
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge text-dark px-3 py-1.5 rounded-pill fw-bold border bg-white shadow-sm" style="border-color: #ffc107 !important;">
+                        <i class="fa-solid fa-star text-warning me-1"></i> Skor Wisata: 
+                        <?= (!empty($destinasi['rating_rata_rata']) && $destinasi['rating_rata_rata'] > 0) ? number_format($destinasi['rating_rata_rata'], 1) : '0.0' ?> / 5.0
+                    </span>
+                    <small class="text-muted fw-medium">(Akumulasi adil sistem)</small>
+                </div>
+
                 <p class="text-muted fs-6 mb-4"><i class="fa-solid fa-location-dot me-2 text-danger"></i><?= esc($destinasi['address']) ?></p>
             </div>
             
@@ -112,22 +125,21 @@
             <?php if(!empty($destinasi['latitude']) && !empty($destinasi['longitude'])): ?>
                 <div class="card border-0 bg-light p-4 rounded-4 shadow-sm mb-4" data-aos="fade-up" data-aos-delay="300">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0"><i class="fa-solid fa-map-location-dot me-2 text-primary"></i> Peta & Lokasi Akurat</h5>
-                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
-                            Lat: <?= esc($destinasi['latitude']) ?> | Lng: <?= esc($destinasi['longitude']) ?>
+                        <h5 class="fw-bold mb-0"><i class="fa-solid fa-map-location-dot me-2 text-primary"></i> Peta Lokasi Interaktif</h5>
+                        <div class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill fw-semibold">
+                            Sistem REST API Aktif
                         </div>
                     </div>
                     
-                    <p class="small text-muted mb-3">Jelajahi area sekitar lokasi wisata secara interaktif melalui peta di bawah ini.</p>
+                    <p class="small text-muted mb-3">Klik tombol di bawah untuk melacak dan memuat titik rute koordinat destinasi ini secara langsung dari database.</p>
                     
-                    <iframe class="map-frame" 
-                            src="https://maps.google.com/maps?q=<?= $destinasi['latitude'] ?>,<?= $destinasi['longitude'] ?>&hl=id&z=14&output=embed" 
-                            allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
+                    <div id="mapUser"></div>
                     
-                    <a href="https://www.google.com/maps/search/?api=1&query=<?= $destinasi['latitude'] ?>,<?= $destinasi['longitude'] ?>" target="_blank" class="btn btn-outline-primary rounded-pill w-100 fw-bold py-2 mt-2 transition">
-                        <i class="fa-solid fa-location-arrow me-2"></i> Buka Rute Arah di Google Maps App
-                    </a>
+                    <button class="btn text-white w-100 fw-bold py-2.5 mt-2 rounded-pill shadow-sm transition" 
+                            style="background-color: #0b1c3c;"
+                            onclick="panggilRestAPI(<?= $destinasi['id'] ?>)">
+                        <i class="fa-solid fa-location-arrow me-2"></i> Aktifkan & Terbangkan ke Lokasi Wisata
+                    </button>
                 </div>
             <?php endif; ?>
         </div>
@@ -218,25 +230,61 @@
 
 <?= $this->section('scripts') ?>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    // 1. Inisialisasi Animasi AOS
     AOS.init({ once: true, offset: 50 });
 
-    // 2. Fungsi Galeri: Mengganti Gambar Utama saat Thumbnail di-klik
     function changeMainImage(thumbElement, newSrc) {
-        // Ganti sumber gambar utama
         const mainImg = document.getElementById('mainImage');
-        mainImg.style.opacity = '0'; // Efek fade out singkat
-        
+        mainImg.style.opacity = '0';
         setTimeout(() => {
             mainImg.src = newSrc;
-            mainImg.style.opacity = '1'; // Efek fade in
+            mainImg.style.opacity = '1';
         }, 150);
-
-        // Pindahkan status 'active' (garis oranye) ke thumbnail yang diklik
         const thumbs = document.querySelectorAll('.thumb-img');
         thumbs.forEach(t => t.classList.remove('active'));
         thumbElement.classList.add('active');
+    }
+
+    var mapUser = L.map('mapUser').setView([-4.1406, 122.1746], 8); 
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(mapUser);
+
+    var markerUser;
+
+    function panggilRestAPI(idDestinasi) {
+        fetch('<?= base_url('api/lokasi') ?>/' + idDestinasi)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Data koordinat gagal diambil dari API.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if(data.status === 'success') {
+                    var lat = parseFloat(data.latitude);
+                    var lng = parseFloat(data.longitude);
+                    var namaWisata = data.nama;
+
+                    mapUser.flyTo([lat, lng], 15, {
+                        animate: true,
+                        duration: 1.8 
+                    });
+
+                    if (markerUser) { mapUser.removeLayer(markerUser); }
+
+                    markerUser = L.marker([lat, lng]).addTo(mapUser)
+                        .bindPopup(`<div class="text-center"><strong>${namaWisata}</strong><br><small class="text-success fw-bold"><i class="fa-solid fa-circle-check"></i> Terverifikasi REST API</small></div>`)
+                        .openPopup();
+                }
+            })
+            .catch(error => {
+                console.error('REST API Error:', error);
+                alert('Gagal melacak lokasi: Koneksi server API terputus atau koordinat kosong.');
+            });
     }
 </script>
 <?= $this->endSection() ?>

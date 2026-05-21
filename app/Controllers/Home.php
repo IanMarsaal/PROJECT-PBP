@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Models\DestinasiModel;
 use App\Models\KategoriModel;
 use App\Models\Destinasi_ImageModel;
-// use App\Models\ReviewModel; // Buka komentar ini nanti kalau tabel review sudah siap
+use App\Models\ReviewModel; 
 
 class Home extends BaseController
 {
@@ -21,12 +21,23 @@ class Home extends BaseController
         $this->imageModel = new Destinasi_ImageModel();
     }
 
-    // GAMBAR 1 & 2: Halaman Beranda / Destinasi
+    // 1. Halaman Beranda (Menampilkan 8 Destinasi Terbaru + Rating)
     public function index()
     {
         $data['kategori'] = $this->kategoriModel->findAll();
-        $destinasi = $this->destinasiModel->orderBy('created_at', 'DESC')->findAll(8);
+        
+        // KEMBANGAN: Menggunakan Query Builder untuk menghitung rata-rata rating secara real-time
+        $db = \Config\Database::connect();
+        $builder = $db->table('destinasi');
+        $builder->select('destinasi.*, ROUND(AVG(review.rating), 1) as rating_rata_rata');
+        $builder->join('review', 'review.destination_review_id = destinasi.id', 'left');
+        $builder->groupBy('destinasi.id');
+        $builder->orderBy('destinasi.created_at', 'DESC');
+        $builder->limit(8);
+        
+        $destinasi = $builder->get()->getResultArray();
 
+        // Ambil foto utama untuk setiap destinasi
         foreach ($destinasi as &$dest) {
             $gambar = $this->imageModel->where('destination_id', $dest['id'])->first();
             $dest['image'] = $gambar ? $gambar['image_path'] : 'default.png';
@@ -36,7 +47,6 @@ class Home extends BaseController
         return view('Home', $data);
     }
 
-    // 2. Destinasi: Katalog lengkap + Fitur cari & filter kategori
     public function destinasi()
     {
         $data['kategori'] = $this->kategoriModel->findAll();
@@ -44,11 +54,26 @@ class Home extends BaseController
         $kategori = $this->request->getVar('kategori');
         $search = $this->request->getVar('search');
 
-        $query = $this->destinasiModel;
-        if ($kategori) $query = $query->where('kategori_id', $kategori);
-        if ($search)   $query = $query->like('name', $search)->orLike('address', $search);
+        $db = \Config\Database::connect();
+        $builder = $db->table('destinasi');
+        $builder->select('destinasi.*, ROUND(AVG(review.rating), 1) as rating_rata_rata');
+        $builder->join('review', 'review.destination_review_id = destinasi.id', 'left');
 
-        $allDestinasi = $query->findAll();
+        if ($kategori) {
+            $builder->where('destinasi.kategori_id', $kategori);
+        }
+        
+        if ($search) {
+            $builder->groupStart()
+                    ->like('destinasi.name', $search)
+                    ->orLike('destinasi.address', $search)
+                    ->groupEnd();
+        }
+
+        $builder->groupBy('destinasi.id');
+        $builder->orderBy('destinasi.name', 'ASC');
+        
+        $allDestinasi = $builder->get()->getResultArray();
 
         foreach ($allDestinasi as &$dest) {
             $gambar = $this->imageModel->where('destination_id', $dest['id'])->first();
@@ -56,17 +81,37 @@ class Home extends BaseController
         }
 
         $data['destinasi'] = $allDestinasi;
+        
+        // PASTIKAN BARIS INI MEMANGGIL FILE KATALOG YANG BENAR
         return view('layout/destinasi', $data);
     }
 
-    // 3. Detail: Saat user mengklik salah satu destinasi (untuk lihat lokasi/review)
+    // 3. Detail: Saat user mengklik salah satu destinasi
     public function detailDestinasi($id)
     {
-        $data['destinasi'] = $this->destinasiModel->find($id);
-        if (!$data['destinasi']) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        // PENGAMAN UTAMA: Jika rute tersasar dan $id bukan berupa angka (misal teks "destinasi")
+        // Langsung lempar atau alihkan ke fungsi destinasi() katalog utama agar tidak error!
+        if (!is_numeric($id)) {
+            return $this->destinasi();
         }
+
+        $db = \Config\Database::connect();
+        $builder = $db->table('destinasi');
+        $builder->select('destinasi.*, ROUND(AVG(review.rating), 1) as rating_rata_rata');
+        $builder->join('review', 'review.destination_review_id = destinasi.id', 'left');
+        $builder->where('destinasi.id', $id);
+        $builder->groupBy('destinasi.id');
+        
+        $destinasiData = $builder->get()->getRowArray();
+
+        // Cek jika data memang tidak ada di database
+        if (!$destinasiData || is_null($destinasiData['id'])) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Destinasi dengan ID $id tidak ditemukan.");
+        }
+        
+        $data['destinasi'] = $destinasiData;
         $data['images'] = $this->imageModel->where('destination_id', $id)->findAll();
+        
         $reviewModel = new \App\Models\ReviewModel();
         $data['reviews'] = $reviewModel->select('review.*, users.username as nama_user')
                                        ->join('users', 'users.id = review.user_id', 'LEFT')
@@ -76,23 +121,17 @@ class Home extends BaseController
         
         return view('layout/detail_destinasi', $data);
     }
-
+    // 4. Menyimpan Review Baru dari Form User
     public function simpanReview()
     {
-            
-    {
         $destination_id = $this->request->getPost('destination_id');
-        
-        // Cek: Apakah saat login, ID user disetel dengan nama 'id', 'user_id', atau 'id_user'?
-        // Sesuaikan dengan nama yang Anda pakai saat membuat session login!
         $user_id = session()->get('id'); 
 
-        // JEBAKAN 1: Jika ternyata user belum login / session kosong
+        // Validasi perlindungan: Jika user iseng menembak form lewat inspect elemen tanpa login
         if (empty($user_id)) {
-            dd("GAGAL: ID User kosong. Pastikan Anda sudah login dan nama session-nya benar.");
+            return redirect()->back()->with('error', 'Anda harus login terlebih dahulu untuk memberikan ulasan!');
         }
 
-        // Siapkan data
         $data = [
             'destination_review_id' => $destination_id,
             'user_id'               => $user_id,
@@ -102,56 +141,61 @@ class Home extends BaseController
 
         $reviewModel = new \App\Models\ReviewModel(); 
         
-        // JEBAKAN 2: Coba paksa masukkan data (insert)
         if ($reviewModel->insert($data) === false) {
-            // Jika gagal, layar akan mati dan mencetak alasan persisnya dari Model
-            dd($reviewModel->errors()); 
+            return redirect()->back()->withInput()->with('errors', $reviewModel->errors()); 
         }
 
-        // Jika berhasil melewati semua jebakan di atas, kembalikan ke halaman wisata
-        return redirect()->to('destinasi/detail/' . $destination_id)->with('success', 'Ulasan Anda berhasil ditambahkan!');
+        // Kembali ke halaman detail destinasi dengan notifikasi sukses
+        return redirect()->to('destinasi/detail/' . $destination_id)->with('success', 'Ulasan dan rating Anda berhasil diterbitkan!');
     }
 
-    }
-
-
+    // 5. Form Kontak dan Fitur SMTP Pengaduan Email Gmail
     public function kirimPesan()
     {
-        $nama  = $this->request->getPost('nama');
-        $email = $this->request->getPost('email'); // Email si pengisi form
-        $pesan = $this->request->getPost('pesan');
+        $rules = [
+            'nama'  => 'required|min_length[3]',
+            'email' => 'required|valid_email',
+            'pesan' => 'required'
+        ];
 
-        // Memanggil layanan Email CodeIgniter
+        if (!$this->validate($rules)) {
+            return redirect()->back()->with('error', 'Format alamat email tidak valid! Silakan periksa kembali.');
+        }
+
+        $namaUser  = $this->request->getPost('nama');
+        $emailUser = $this->request->getPost('email');
+        $pesanUser = $this->request->getPost('pesan');
+
+        $domain = substr(strrchr($emailUser, "@"), 1);
+        $domainAman = ['gmail.com', 'yahoo.com', 'yahoo.co.id'];
+
+        if (!in_array(strtolower($domain), $domainAman)) {
+            return redirect()->back()->with('error', 'Pesan ditolak! Anda wajib menggunakan alamat email resmi (Gmail atau Yahoo).');
+        }
+
         $emailService = \Config\Services::email();
+        $emailService->setFrom('siparsultra@gmail.com', 'Sistem SIPAR-SULTRA');
+        $emailService->setTo('siparsultra@gmail.com'); 
+        $emailService->setSubject('Pengaduan/Pesan Baru dari - ' . $namaUser);
+        
+        $pesanEmail = "<h3>Pesan Baru dari Form Kontak SIPAR-SULTRA</h3>";
+        $pesanEmail .= "<p><strong>Nama Pengirim:</strong> " . esc($namaUser) . "</p>";
+        $pesanEmail .= "<p><strong>Email Pengirim:</strong> " . esc($emailUser) . "</p>";
+        $pesanEmail .= "<p><strong>Isi Pesan / Keluhan:</strong><br>" . nl2br(esc($pesanUser)) . "</p>";
+        
+        $emailService->setMessage($pesanEmail);
 
-        // Konfigurasi isi Email
-        $emailService->setFrom($email, $nama); // Dari siapa
-        $emailService->setTo('sipar.sultra@gmail.com'); // Tujuan email (Email Admin Anda)
-        $emailService->setSubject('Pengaduan/Pesan Baru - SIPAR SULTRA');
-        $emailService->setMessage("
-            <h3>Pesan Baru dari Pengunjung Website</h3>
-            <p><strong>Nama:</strong> {$nama}</p>
-            <p><strong>Email:</strong> {$email}</p>
-            <hr>
-            <p><strong>Isi Pesan:</strong></p>
-            <p>{$pesan}</p>
-        ");
-
-        // Proses Kirim
         if ($emailService->send()) {
-            return redirect()->back()->with('success', 'Pesan Anda berhasil dikirim! Tim kami akan segera menindaklanjutinya.');
+            return redirect()->back()->with('success', 'Pesan Anda berhasil dikirim! Tim SIPAR-SULTRA akan segera meninjau laporan Anda.');
         } else {
-            // Menampilkan error jika gagal terkirim (biasanya karena belum setting SMTP .env)
-            return redirect()->back()->with('error', 'Gagal mengirim pesan. Pastikan koneksi dan pengaturan email server benar.');
+            return redirect()->back()->with('error', 'Sistem gagal mengirimkan pesan. Silakan coba kembali.');
         }
     }
 
-    
     public function tentang()
     {
         return view('layout/tentang');
     }
-
 
     public function kontak()
     {
@@ -159,8 +203,7 @@ class Home extends BaseController
     }
 
     public function profil()
-{
-   
-    return view('layout/profil');
-}
+    {
+        return view('layout/profil');
+    }
 }

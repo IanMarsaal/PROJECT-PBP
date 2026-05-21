@@ -18,7 +18,7 @@
         body {
       
             font-family: 'Poppins', sans-serif;
-            overflow-x: hidden; /* Diubah agar bisa scroll ke bawah jika layar kecil */
+            overflow-x: hidden; 
         }
 
         /* --- KUSTOMISASI TOMBOL --- */
@@ -143,7 +143,7 @@
                         <div class="alert alert-success small py-3 rounded-4 border-0 shadow-sm fw-medium"><i class="fa-solid fa-circle-check me-2"></i> <?= session()->getFlashdata('success') ?></div>
                     <?php endif; ?>
 
-                    <form action="<?= base_url('login') ?>" method="post">
+                    <form action="<?= base_url('login') ?>" method="post" autocomplete="off">
                         
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-dark ps-2">Alamat Email</label>
@@ -157,7 +157,7 @@
                             <label class="form-label small fw-bold text-dark ps-2">Kata Sandi</label>
                             <div class="input-group">
                                 <span class="input-group-text text-muted"><i class="fa-solid fa-lock"></i></span>
-                                <input type="password" name="password" class="form-control" placeholder="Masukkan kata sandi Anda" required>
+                                <input type="password" name="password" class="form-control" placeholder="Masukkan kata sandi Anda" autocomplete="new-password" required>
                                 <span class="input-group-text text-muted toggle-password pe-4" style="cursor: pointer;" title="Tampilkan/Sembunyikan Sandi">
                                     <i class="fa-regular fa-eye"></i> 
                                 </span>
@@ -220,7 +220,7 @@
                         input.type = 'text';
                         eyeIcon.classList.remove('fa-eye');
                         eyeIcon.classList.add('fa-eye-slash');
-                        eyeIcon.classList.add('text-orange'); // Tambahan efek warna saat mata diklik
+                        eyeIcon.classList.add('text-orange');
                     } else {
                         input.type = 'password';
                         eyeIcon.classList.remove('fa-eye-slash');

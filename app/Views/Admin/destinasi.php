@@ -1,5 +1,19 @@
 <?= $this->extend('Admin/dashboard') ?> 
 
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    /* Styling untuk kotak peta di form */
+    #mapPicker {
+        height: 350px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        z-index: 1; 
+    }
+</style>
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <div class="container-fluid">
     <div class="row">
@@ -52,23 +66,28 @@
                                    value="<?= $isEdit ? esc($destinasi_single['address']) : old('address') ?>" required>
                         </div>
 
-                        <div class="row mb-3">
+                        <div class="row mb-2">
                             <div class="col-6">
                                 <label class="form-label fw-semibold">Latitude</label>
-                                <input type="text" class="form-control" name="latitude" placeholder="-4.xxxx" value="<?= $isEdit ? esc($destinasi_single['latitude']) : old('latitude') ?>">
+                                <input type="text" class="form-control koordinat-input bg-light" id="lat" name="latitude" placeholder="-4.XXXX" 
+                                       value="<?= $isEdit ? esc($destinasi_single['latitude']) : old('latitude') ?>" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-semibold">Longitude</label>
-                                <input type="text" class="form-control" name="longitude" placeholder="122.xxxx" value="<?= $isEdit ? esc($destinasi_single['longitude']) : old('longitude') ?>">
+                                <input type="text" class="form-control koordinat-input bg-light" id="lng" name="longitude" placeholder="-122,XXX" 
+                                       value="<?= $isEdit ? esc($destinasi_single['longitude']) : old('longitude') ?>" required>
                             </div>
+                        </div>
 
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-2"><i class="fa-solid fa-hand-pointer me-1"></i> Geser dan klik area pada peta di bawah ini untuk mengunci koordinat SULTRA.</small>
+                            <div id="mapPicker"></div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Deskripsi</label>
                             <textarea class="form-control" name="description" rows="3"><?= $isEdit ? esc($destinasi_single['description']) : old('description') ?></textarea>
                         </div>
-
 
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Foto Destinasi (Bisa pilih lebih dari 1 foto)</label>
@@ -146,10 +165,16 @@
         </div>
     </div>
 </div>
+<?= $this->endSection() ?>
 
+<?= $this->section('scripts') ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        
+        // --- LOGIKA SWEET ALERT ---
         <?php if(session()->getFlashdata('success')): ?>
             Swal.fire({
                 icon: 'success',
@@ -183,6 +208,50 @@
                     }
                 });
             });
+        });
+
+        // --- LOGIKA INTERAKTIF PETA LEAFLET (Pusat Sulawesi Tenggara) ---
+        
+        var isEditMode = <?= $isEdit ? 'true' : 'false' ?>;
+        
+        // Jika mode edit, titik di lokasi data. Jika tambah baru, titik berpusat di tengah Sultra.
+        var startLat = <?= $isEdit && !empty($destinasi_single['latitude']) ? $destinasi_single['latitude'] : '-4.1406' ?>;
+        var startLng = <?= $isEdit && !empty($destinasi_single['longitude']) ? $destinasi_single['longitude'] : '122.1746' ?>;
+        
+        // Zoom lebih kecil (8) untuk mode tambah agar terlihat se-Sultra, Zoom 14 untuk mode edit agar fokus
+        var startZoom = isEditMode ? 14 : 8;
+
+        // Inisialisasi Peta
+        var mapPicker = L.map('mapPicker').setView([startLat, startLng], startZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapPicker);
+
+        var penanda;
+
+        // Jika mode Edit, langsung tampilkan pin di koordinat yang tersimpan di database
+        if (isEditMode) {
+            penanda = L.marker([startLat, startLng]).addTo(mapPicker)
+                       .bindPopup("<b>Lokasi Tersimpan</b>").openPopup();
+        }
+
+        // Tangkap event klik untuk mengambil koordinat secara interaktif
+        mapPicker.on('click', function(e) {
+            var koordinatLat = e.latlng.lat;
+            var koordinatLng = e.latlng.lng;
+
+            // Tembak angka ke dalam input form Latitude dan Longitude
+            document.getElementById('lat').value = koordinatLat;
+            document.getElementById('lng').value = koordinatLng;
+
+            // Geser pin ke titik klik baru atau buat pin baru
+            if (penanda) {
+                penanda.setLatLng(e.latlng);
+            } else {
+                penanda = L.marker(e.latlng).addTo(mapPicker);
+            }
+            penanda.bindPopup("<b>Lokasi Terpilih!</b><br>Koordinat siap disimpan.").openPopup();
         });
     });
 </script>

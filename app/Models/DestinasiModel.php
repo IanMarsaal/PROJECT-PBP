@@ -9,6 +9,6 @@ class DestinasiModel extends Model
     protected $table            = 'destinasi';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
-    protected $allowedFields    = ['kategori_id', 'admin_id', 'name', 'description', 'address', 'ticket_price', 'opening_hours', 'latitude', 'longitude'];
+    protected $allowedFields    = ['kategori_id', 'admin_id', 'name', 'description', 'address', 'latitude', 'longitude'];
     protected $useTimestamps    = true;
 }

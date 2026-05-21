@@ -64,5 +64,6 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     
     $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) {
     $routes->post('login', 'AuthApi::login');
-    $routes->get('destinasi', 'DestinasiApi::index'); 
+    $routes->get('destinasi', 'DestinasiApi::index');
+    $routes->get('lokasi/(:num)', 'ApiController::getLokasi/$1');
 });

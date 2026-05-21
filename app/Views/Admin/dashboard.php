@@ -16,7 +16,7 @@
         /* --- PENGATURAN DASAR --- */
         body { 
             font-family: 'Poppins', sans-serif; 
-            background-color: #f4f7f6; /* Abu-abu sangat terang agar Card putih terlihat menonjol */
+            background-color: #f4f7f6;
             overflow-x: hidden;
         }
 
@@ -24,9 +24,9 @@
         .sidebar { 
             min-height: 100vh; 
             width: 260px; 
-            background: linear-gradient(180deg, #0b1c3c 0%, #050d1e 100%); /* Biru gelap elegan */
+            background: linear-gradient(180deg, #0b1c3c 0%, #050d1e 100%);
             box-shadow: 4px 0 10px rgba(0,0,0,0.05);
-            position: fixed; /* Sidebar tetap di tempat saat di-scroll */
+            position: fixed; 
             z-index: 1000;
             transition: all 0.3s ease;
         }
@@ -47,7 +47,7 @@
         }
 
         .sidebar-menu a { 
-            color: #a3aed1; /* Warna teks keabu-abuan agar tidak menyilaukan */
+            color: #a3aed1; 
             text-decoration: none; 
             padding: 12px 20px; 
             display: flex; 
@@ -67,21 +67,18 @@
             transition: all 0.3s ease;
         }
 
-        /* Efek Hover (Bergeser ke kanan) */
         .sidebar-menu a:hover { 
             color: #ffffff; 
             background-color: rgba(255,255,255,0.05);
             transform: translateX(5px);
         }
 
-        /* Menu Aktif (Warna Oranye) */
         .sidebar-menu a.active { 
             background-color: #f26e22; 
             color: white; 
             box-shadow: 0 4px 15px rgba(242, 110, 34, 0.3);
         }
 
-        /* Menu Logout Khusus */
         .sidebar-menu a.logout-btn {
             margin-top: 30px;
             color: #ff6b6b;
@@ -95,7 +92,7 @@
 
         /* --- KONTEN UTAMA & TOPBAR --- */
         .main-wrapper {
-            margin-left: 260px; /* Jarak agar tidak tertutup sidebar */
+            margin-left: 260px; 
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -120,14 +117,20 @@
             flex-grow: 1;
         }
 
-        /* --- NOTIFIKASI KUSTOM --- */
         .alert-custom {
             border: none;
             border-radius: 15px;
             font-weight: 500;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
+
+        /* PERKEMBANGAN: Mencegah konflik tampilan CSS Leaflet Map dengan template utama */
+        .leaflet-container {
+            font-family: 'Poppins', sans-serif !important;
+        }
     </style>
+
+    <?= $this->renderSection('styles') ?>
 </head>
 <body>
 
@@ -170,22 +173,18 @@
             <div class="d-flex align-items-center">
              <h5 class="mb-0 fw-bold text-dark d-none d-md-block">
                     <?php 
-                        // Menyesuaikan zona waktu sistem ke WITA
                         date_default_timezone_set('Asia/Makassar'); 
-                        
-                        // Mengambil format jam dalam bentuk angka 0-23
                         $jam = (int) date('H');
 
-                        // Logika sapaan sesuai jadwal yang Anda inginkan
                         if ($jam >= 7 && $jam <= 10) {
                             echo 'Selamat Pagi,';
-                        } elseif ($jam >= 11 && $jam <= 14) { // Jam 11:00 - 14:59 (Siang)
+                        } elseif ($jam >= 11 && $jam <= 14) { 
                             echo 'Selamat Siang,';
-                        } elseif ($jam >= 15 && $jam <= 17) { // Jam 15:00 - 17:59 (Sore)
+                        } elseif ($jam >= 15 && $jam <= 17) { 
                             echo 'Selamat Sore,';
-                        } elseif ($jam >= 18 || $jam == 0) { // Jam 18:00 - 00:59 (Malam)
+                        } elseif ($jam >= 18 || $jam == 0) { 
                             echo 'Selamat Malam,';
-                        } else { // Sisa waktu dari jam 01:00 - 06:59 
+                        } else { 
                             echo 'Selamat Tengah Malam, Sebaiknya istirahat'; 
                         }
                     ?> 
@@ -224,8 +223,22 @@
         <footer class="text-center py-3 text-muted small mt-auto">
             &copy; <?= date('Y') ?> <strong>SIPAR-SULTRA</strong>. Dibuat dengan antusiasme untuk memajukan pariwisata.
         </footer>
+        
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Mengatasi bug Leaflet Map di mana ubin peta (tiles) kadang abu-abu jika dimuat di dalam card Bootstrap
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(function() {
+                if (typeof mapPicker !== 'undefined') {
+                    mapPicker.invalidateSize();
+                }
+            }, 400);
+        });
+    </script>
+
+    <?= $this->renderSection('scripts') ?>
 </body>
 </html>

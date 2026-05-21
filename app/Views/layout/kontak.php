@@ -45,6 +45,7 @@
     .btn-kirim {
         background-color: #f26e22; color: white;
         border-radius: 12px; padding: 12px; transition: all 0.3s ease;
+        border: none;
     }
     .btn-kirim:hover {
         background-color: #d95e16;
@@ -99,20 +100,25 @@
                     </div>
                 <?php endif; ?>
 
-                <form action="<?= base_url('kontak/kirim') ?>" method="post">
+                <form action="<?= base_url('kontak/kirim') ?>" method="post" autocomplete="off">
                     <?= csrf_field() ?>
+                    
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-dark">Nama Lengkap</label>
                         <input type="text" class="form-control" name="nama" placeholder="Masukkan nama Anda" required>
                     </div>
+                    
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-dark">Alamat Email</label>
-                        <input type="email" class="form-control" name="email" placeholder="contoh@gmail.com" required>
+                        <input type="email" class="form-control" name="email" placeholder="namaanda@gmail.com" required>
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">Pastikan email aktif agar kami dapat membalas pesan Anda.</div>
                     </div>
+                    
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-dark">Isi Pesan / Pengaduan</label>
                         <textarea class="form-control" name="pesan" rows="5" placeholder="Tuliskan pesan atau laporan Anda secara detail di sini..." required></textarea>
                     </div>
+                    
                     <button type="submit" class="btn btn-kirim w-100 fw-bold fs-6">
                         <i class="fa-solid fa-paper-plane me-2"></i> Kirim Pesan Sekarang
                     </button>
