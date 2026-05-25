@@ -39,7 +39,7 @@ class AdminController extends BaseController
         // Validasi input Kategori
         $rules = [
             'name' => 'required|min_length[3]|is_unique[kategori.name]',
-            'descriptio' => 'permit_empty|string'
+            'description' => 'permit_empty|string'
         ];
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
