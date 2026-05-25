@@ -16,7 +16,7 @@
         /* --- PENGATURAN DASAR --- */
         body { 
             font-family: 'Poppins', sans-serif; 
-            background-color: #f4f7f6;
+            background-color: #faff9a;
             overflow-x: hidden;
         }
 
